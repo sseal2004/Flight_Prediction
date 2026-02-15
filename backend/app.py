@@ -50,13 +50,21 @@ def predict():
         date_diff = (departure_date - datetime.today()).days + 1
 
         # Prepare features for prediction
-        features = [airline, source_city, departure_time, stops, arrival_time, destination_city, travel_class, date_diff]
-        prediction = model.predict([features])[0]
+        features = [
+            airline,
+            source_city,
+            departure_time,
+            stops,
+            arrival_time,
+            destination_city,
+            travel_class,
+            date_diff
+        ]
 
+        prediction = model.predict([features])[0]
         return jsonify({'prediction': round(prediction, 2)})
 
     except KeyError as e:
         return jsonify({'error': f'Missing data for: {e}'}), 400
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
