@@ -1,11 +1,12 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 import pickle
 from datetime import datetime, timedelta
 from flask_cors import CORS
+import os
 
-app = Flask(__name__)
+# Serve React dist folder
+app = Flask(__name__, static_folder="dist", static_url_path="")
 CORS(app)
-
 
 # Load the pre-trained model
 model = pickle.load(open('model.pkl', 'rb'))
@@ -18,6 +19,19 @@ stops_dict = {'zero': 0, "one": 1, "two_or_more": 2}
 arrival_dict = {'Early_Morning': 0, "Morning": 1, "Afternoon": 2, "Evening": 3, "Night": 4, "Late_Night": 5}
 destination_dict = {'Delhi': 0, "Hyderabad": 1, "Mumbai": 2, "Bangalore": 3, "Chennai": 4, "Kolkata": 5}
 class_dict = {'Economy': 0, 'Business': 1}
+
+# ---------- React Frontend Serving ----------
+@app.route('/')
+def serve_react():
+    return send_from_directory(app.static_folder, 'index.html')
+
+@app.route('/<path:path>')
+def serve_static(path):
+    file_path = os.path.join(app.static_folder, path)
+    if os.path.exists(file_path):
+        return send_from_directory(app.static_folder, path)
+    return send_from_directory(app.static_folder, 'index.html')
+# ------------------------------------------------
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -40,6 +54,7 @@ def predict():
         prediction = model.predict([features])[0]
 
         return jsonify({'prediction': round(prediction, 2)})
+
     except KeyError as e:
         return jsonify({'error': f'Missing data for: {e}'}), 400
     except Exception as e:
