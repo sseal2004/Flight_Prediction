@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 import pickle
 from datetime import datetime
 from flask_cors import CORS
+import os
 
 app = Flask(__name__)
 CORS(app)
@@ -19,6 +20,12 @@ destination_dict = {'Delhi': 0, "Hyderabad": 1, "Mumbai": 2, "Bangalore": 3, "Ch
 class_dict = {'Economy': 0, 'Business': 1}
 
 
+# ✅ Root route for Render health check
+@app.route("/", methods=["GET", "HEAD"])
+def health():
+    return jsonify({"status": "Backend is running"}), 200
+
+
 @app.route('/predict', methods=['POST'])
 def predict():
     data = request.json
@@ -31,9 +38,12 @@ def predict():
         destination_city = destination_dict[data['destination_city']]
         travel_class = class_dict[data['class']]
 
-        # Calculate date difference
+        # Calculate date difference (safe, never negative)
         departure_date = datetime.strptime(data['departure_date'], '%Y-%m-%d')
-        date_diff = (departure_date - datetime.today()).days + 1
+        date_diff = max(
+            1,
+            (departure_date.date() - datetime.today().date()).days + 1
+        )
 
         # Prepare features for prediction
         features = [
@@ -48,15 +58,14 @@ def predict():
         ]
 
         prediction = model.predict([features])[0]
-        return jsonify({'prediction': round(prediction, 2)})
+        return jsonify({'prediction': round(float(prediction), 2)})
 
     except KeyError as e:
-        return jsonify({'error': f'Missing data for: {e}'}), 400
+        return jsonify({'error': f'Missing data for: {str(e)}'}), 400
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 
 if __name__ == "__main__":
-    import os
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
