@@ -27,7 +27,7 @@ function FlightPricePredictor() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('https://flight-prediction-buuw.onrender.com/predict', formData);
+      const response = await axios.post('https://flightprediction-production.up.railway.app/predict', formData);
       setPrediction(response.data.prediction);
     } catch (error) {
       console.error('Error fetching prediction:', error);
